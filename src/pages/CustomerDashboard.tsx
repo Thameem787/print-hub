@@ -167,12 +167,12 @@ const UploadSection = ({ user, onLogin }: { user: User | null; onLogin: () => vo
           <div className="form-group">
             <label className="form-label">Select Vendor</label>
             <select className="form-control" value={selectedVendor?.id ?? ''} onChange={(e) => {
-              const v = vendorList.find((x) => x.id === Number(e.target.value));
+              const v = vendorList.find((x) => String(x.id) === String(e.target.value));
               setSelectedVendor(v || null);
             }}>
               {vendorList.length === 0 && <option value="">No vendors available</option>}
               {vendorList.map((v) => (
-                <option key={v.id} value={v.id}>
+                <option key={String(v.id)} value={String(v.id)}>
                   {v.shop_name} — {v.city} (${v.price_per_gram}/g)
                 </option>
               ))}
