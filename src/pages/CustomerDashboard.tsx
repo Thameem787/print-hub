@@ -48,6 +48,24 @@ const UploadSection = ({ user, onLogin }: { user: User | null; onLogin: () => vo
     }
   }, [user]);
 
+  // Auto-poll order statuses every 15 seconds
+  useEffect(() => {
+    if (!user) return;
+    const interval = setInterval(() => {
+      orders.list().then((res) => {
+        setMyOrders((prev) => {
+          // Only update state if any order status has changed
+          const hasChange = res.orders.some((incoming) => {
+            const existing = prev.find((o) => String(o.id) === String(incoming.id));
+            return !existing || existing.status !== incoming.status;
+          });
+          return hasChange ? res.orders : prev;
+        });
+      }).catch(() => {});
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [user]);
+
   // Fetch live estimate whenever relevant fields change
   useEffect(() => {
     if (!selectedVendor) return;
@@ -272,8 +290,12 @@ const UploadSection = ({ user, onLogin }: { user: User | null; onLogin: () => vo
       {/* My Orders */}
       {user && (
         <div style={{ marginTop: '3rem' }}>
-          <h3 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem' }}>
+          <h3 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             📦 My Orders
+            <span title="Auto-refreshing every 5 seconds" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem', fontWeight: 500, color: 'var(--success)', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '20px', padding: '0.2rem 0.6rem' }}>
+              <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--success)', display: 'inline-block', animation: 'pulse 1.5s ease-in-out infinite' }} />
+              Live
+            </span>
           </h3>
           {loadingOrders ? (
             <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
