@@ -48,17 +48,19 @@ const UploadSection = ({ user, onLogin }: { user: User | null; onLogin: () => vo
     }
   }, [user]);
 
-  // Auto-poll order statuses every 15 seconds
+  // Auto-poll order statuses every 5 seconds
   useEffect(() => {
     if (!user) return;
     const interval = setInterval(() => {
       orders.list().then((res) => {
         setMyOrders((prev) => {
-          // Only update state if any order status has changed
-          const hasChange = res.orders.some((incoming) => {
-            const existing = prev.find((o) => String(o.id) === String(incoming.id));
-            return !existing || existing.status !== incoming.status;
-          });
+          // Update if order count changed OR any status changed
+          const hasChange =
+            res.orders.length !== prev.length ||
+            res.orders.some((incoming) => {
+              const existing = prev.find((o) => String(o.id) === String(incoming.id));
+              return !existing || existing.status !== incoming.status;
+            });
           return hasChange ? res.orders : prev;
         });
       }).catch(() => {});

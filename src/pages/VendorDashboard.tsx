@@ -198,6 +198,26 @@ const VendorDashboard = ({ user, onLogin }: { user: User | null; onLogin: () => 
     fetchOrders();
   }, [user]);
 
+  // Auto-poll for new/updated jobs every 5 seconds
+  useEffect(() => {
+    if (!user || user.role !== 'vendor') return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await vendors.myOrders();
+        setJobList((prev) => {
+          const hasChange =
+            res.orders.length !== prev.length ||
+            res.orders.some((incoming) => {
+              const existing = prev.find((o) => String(o.id) === String(incoming.id));
+              return !existing || existing.status !== incoming.status;
+            });
+          return hasChange ? res.orders : prev;
+        });
+      } catch {}
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [user]);
+
   const handleToggleAvailability = async () => {
     setTogglingAvail(true);
     try {
@@ -349,6 +369,10 @@ const VendorDashboard = ({ user, onLogin }: { user: User | null; onLogin: () => 
         <div className="glass-panel" style={{ padding: '2rem' }}>
           <h3 style={{ fontSize: '1.25rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Inbox size={20} color="var(--accent-primary)" /> Incoming Print Jobs
+            <span title="Auto-refreshing every 5 seconds" style={{ marginLeft: '0.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.7rem', fontWeight: 500, color: 'var(--success)', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '20px', padding: '0.2rem 0.6rem' }}>
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--success)', display: 'inline-block', animation: 'livePulse 1.5s ease-in-out infinite' }} />
+              Live
+            </span>
           </h3>
           {activeJobs.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
